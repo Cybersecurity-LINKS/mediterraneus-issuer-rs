@@ -4,3 +4,4 @@
 
 pub mod iota;
 pub mod eth;
+pub mod configs;

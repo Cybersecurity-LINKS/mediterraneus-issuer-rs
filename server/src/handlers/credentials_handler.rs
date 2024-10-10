@@ -34,6 +34,7 @@ async fn issue_credential (
     pool: web::Data<Pool>,
     iota_state: web::Data<IotaState>,
     signer_data: web::Data<Arc<SignerMiddlewareShort>>,
+    identity_sc_address: web::Data<String>
 ) -> Result<impl Responder, IssuerError> {
     log::info!("Issuing credential...");
 
@@ -55,7 +56,7 @@ async fn issue_credential (
     )?;
 
     // Get the first free credential id from Identity Smart Contract
-    let identity_addr: Address = std::env::var("IDENTITY_SC_ADDRESS").expect("$IDENTITY_SC_ADDRESS must be set").parse().map_err(|_| IssuerError::ContractAddressRecoveryError)?;
+    let identity_addr: Address = Address::from_str(&identity_sc_address).map_err(|_| IssuerError::ContractAddressRecoveryError)?;
     let identity_sc = Identity::new(identity_addr, signer_data.get_ref().into());
     
     let credential_id = identity_sc.get_free_v_cid().call().await.map_err(|err| IssuerError::ContractError(err.to_string()))?;
@@ -116,11 +117,12 @@ async fn issue_credential (
 async fn revoke_credential (
     path: web::Path<i64>,
     eth_provider: web::Data<Arc<SignerMiddlewareShort>>,
+    identity_sc_address: web::Data<String>,
 ) -> Result<impl Responder, IssuerError> {
     log::info!("Revoking credential...");
     let credential_id = path.into_inner();
     let client = eth_provider.get_ref().clone();
-    let identity_addr: Address = std::env::var("IDENTITY_SC_ADDRESS").expect("$IDENTITY_SC_ADDRESS must be set").parse().map_err(|_| IssuerError::ContractAddressRecoveryError)?;
+    let identity_addr: Address = Address::from_str(&identity_sc_address).map_err(|_| IssuerError::ContractAddressRecoveryError)?;
     let identity_sc = Identity::new(identity_addr, client);
     
     let call = identity_sc.revoke_vc(U256::from(credential_id));

@@ -10,8 +10,7 @@ services:
     restart: unless-stopped
     ports:
       - "3213:3213"
-    # secrets:
-    #   - 
+    env_file: ./server/.env
     depends_on:
       issuer-postgres:
        condition: service_healthy 
